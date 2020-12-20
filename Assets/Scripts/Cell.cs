@@ -10,17 +10,20 @@ public class Cell : MonoBehaviour
     protected int y;
     protected bool covered = true;
 
-    public void OnMouseUpAsButton()
+    public virtual void OnMouseUpAsButton()
     {
-        if (covered)
-        {
-            board.SelectCell(x, y);
-        }
+        if (IsCovered())
+            Uncover();
     }
 
     public bool IsCovered()
     {
         return covered;
+    }
+
+    private void Uncover()
+    {
+        board.SelectCell(x, y);
     }
 
     public void SetBoard(Board b, int x, int y)

@@ -11,7 +11,6 @@ GameObject:
   - component: {fileID: 6851723560785545914}
   - component: {fileID: 6974987916721644001}
   - component: {fileID: 191076144556010470}
-  - component: {fileID: -235453697189252630}
   - component: {fileID: 1789677951141235452}
   m_Layer: 0
   m_Name: cellClue
@@ -110,23 +109,6 @@ BoxCollider2D:
   serializedVersion: 2
   m_Size: {x: 1, y: 1}
   m_EdgeRadius: 0
---- !u!114 &-235453697189252630
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7366097162585409136}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ae23cd12269700742961028ff62371f4, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  textureDefault: {fileID: 21300000, guid: f4325b37fc01efe41ae294db4f7b7f00, type: 3}
-  textureFlag: {fileID: 21300000, guid: 533182beebc886b4f96906dd50958a64, type: 3}
-  texturesUncovered:
-  - {fileID: 21300000, guid: 9a1cdeeac33c50647952847d7016eb41, type: 3}
-  - {fileID: 21300000, guid: 02925bc9c31eb0944b9c879355bb730a, type: 3}
 --- !u!114 &1789677951141235452
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -1,13 +1,13 @@
 ﻿using UnityEngine;
-using System;
+using System.Collections.Generic;
 
 public class BoardNonogram : Board
 {
     public GameObject GOClue;
     protected new CellNonogram[,] board;
 
-    private string[] newcluesRow;
-    private string[] newcluesCol;
+    private Clues[] cluesRow;
+    private Clues[] cluesCol;
 
     public override void GenerateBoard()
     {
@@ -15,9 +15,9 @@ public class BoardNonogram : Board
 
         PlacePixels();
 
-        CheckClues();
-        //PrintClues();
-        ShowClues();
+        CreateClues();
+
+        CheckSolved();
     }
 
     protected override void InitBoard()
@@ -48,6 +48,11 @@ public class BoardNonogram : Board
         if (gameOver) return;
 
         board[y, x].Uncover();
+
+        if (board[y, x].IsPixel())
+            GameOver("You Lose :(");
+        else
+            CheckClue(x, y);
     }
 
     private void PlacePixels()
@@ -57,77 +62,78 @@ public class BoardNonogram : Board
                 cell.SetPixel(true);
     }
 
-    private void PrintClues()
+    private void ShowClues(List<int>[] rows, List<int>[] cols)
     {
-        print("rows");
-        foreach (string row in newcluesRow)
-        {
-            print(row.ToString());
-        }
-        print("cols");
-        foreach (string col in newcluesCol)
-        {
-            print(col.ToString());
-        }
-    }
-
-    private void ShowClues()
-    {
+        cluesRow = new Clues[height];
+        cluesCol = new Clues[width];
         float xStart = GetOrigin().x;
         float yStart = GetOrigin().y;
-        int y = 0;
         int x;
-        string[] r;
+        int y = 0;
+        int i = 0;
 
-        foreach (string row in newcluesRow)
+        foreach (List<int> row in rows)
         {
-            r = row.Split(' ');
-            Array.Reverse(r);
+            cluesRow[i] = new Clues();
+            row.Reverse();
             x = 0;
-            foreach (string item in r)
+            foreach (int clue in row)
             {
-                Vector3 pos = new Vector3(xStart - 1 - x, yStart + y);
-                GameObject cell = Instantiate(GOClue, pos, Quaternion.identity);
-                cell.transform.SetParent(transform);
-                cell.GetComponent<CellClue>().SetClue(int.Parse(item));
+                cluesRow[i].Add(CreateClue(xStart - 1 - x, yStart + y, clue));
+                if (clue == height)
+                    cluesRow[i].SetSolved(true);
                 x++;
             }
             y++;
+            i++;
         }
 
         yStart += y;
 
         x = 0;
+        i = 0;
 
-        foreach (string col in newcluesCol)
+        foreach (List<int> col in cols)
         {
-            r = col.Split(' ');
+            cluesCol[i] = new Clues();
             y = 0;
-            foreach (string item in r)
+            foreach (int clue in col)
             {
-                Vector3 pos = new Vector3(xStart + x, yStart + y);
-                GameObject cell = Instantiate(GOClue, pos, Quaternion.identity);
-                cell.transform.SetParent(transform);
-                cell.GetComponent<CellClue>().SetClue(int.Parse(item));
+                cluesCol[i].Add(CreateClue(xStart + x, yStart + y, clue));
+                if (clue == width)
+                    cluesCol[i].SetSolved(true);
                 y++;
             }
             x++;
+            i++;
         }
     }
 
-    private void CheckClues()
+    private void CreateClues()
     {
-        newcluesCol = new string[width];
-        newcluesRow = new string[height];
-
-        for (int i = 0; i < width; i++)
-            newcluesCol[i] = CalcClues(i, true);
+        List<int>[] cr = new List<int>[height];
+        List<int>[] cc = new List<int>[width];
 
         for (int i = 0; i < height; i++)
-            newcluesRow[i] = CalcClues(i, false);
+            cr[i] = CalcClues(i, false);
+
+        for (int i = 0; i < width; i++)
+            cc[i] = CalcClues(i, true);
+
+        ShowClues(cr, cc);
     }
 
-    private string CalcClues(int rowCol, bool col)
+    private CellClue CreateClue(float x, float y, int val)
+    {
+        Vector3 pos = new Vector3(x, y);
+        GameObject cell = Instantiate(GOClue, pos, Quaternion.identity);
+        cell.transform.SetParent(transform);
+        CellClue clue = cell.GetComponent<CellClue>();
+        clue.SetClue(val);
+        return clue;
+    }
+
+    private List<int> CalcClues(int rowCol, bool col, bool checkSolve = false)
     {
         int x;
         int y;
@@ -135,7 +141,7 @@ public class BoardNonogram : Board
 
         bool prev = false;
         int count = 0;
-        string clues = "";
+        List<int> clues = new List<int>();
 
         int max = col ? height : width;
 
@@ -151,28 +157,88 @@ public class BoardNonogram : Board
                 y = rowCol; 
             }
 
-            isPixel = board[y, x].IsPixel();
+            isPixel = checkSolve ? board[y, x].IsCovered() : board[y, x].IsPixel();
 
             if (isPixel)
                 count++;
 
             if (i> 0 && prev && !isPixel)
             {
-                clues += count.ToString() + " ";
+                clues.Add(count);
                 count = 0;
             }
             prev = isPixel;
         }
 
         if (count > 0)
-            clues += count.ToString() + " ";
-        else if (clues.Length == 0)
-            clues = "0";
+            clues.Add(count);
+        else if (clues.Count == 0) 
+            clues.Add(0);
 
-        if (rowCol == 0 && col)
-            print(clues);
-        return clues.Trim(' ');
+        return clues;
+    }
+
+    private void CheckClue(int x, int y)
+    {        
+        cluesCol[x].CompareSolution(CalcClues(x, true, true));
+        cluesRow[y].CompareSolution(CalcClues(y, false, true), true);
+
+        CheckSolved();
+    }
+
+    private void CheckSolved()
+    {
+        foreach (Clues clue in cluesCol)
+            if (!clue.GetSolved()) return;
+
+        foreach (Clues clue in cluesRow) 
+            if (!clue.GetSolved()) return;
+
+        GameOver("You Win!");
     }
 }
 
+public class Clues
+{
+    private bool solved = false;
+    public List<CellClue> clues = new List<CellClue>();
 
+    public void Add(CellClue clue)
+    {
+        clues.Add(clue);
+    }
+
+    public void CompareSolution(List<int> solution, bool row = false)
+    {
+        if (row) solution.Reverse();
+
+        if (solution.Count != clues.Count)
+        {
+            SetSolved(false);
+            return;
+        }
+
+        for (int i = 0; i < solution.Count; i++)
+        {
+            if (solution[i] != clues[i].GetClue())
+            {
+                SetSolved(false);
+                return;
+            }
+        }
+        SetSolved(true);
+    }
+
+    public bool GetSolved()
+    {
+        return solved;
+    }
+
+    public void SetSolved(bool solved)
+    {
+        this.solved = solved;
+        //todo = figure out how to only shade "solved" clues instead of waiting on whole row
+        foreach (CellClue clue in clues)
+            clue.SetSolved(solved);
+    }
+}
